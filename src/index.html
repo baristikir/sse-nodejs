@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Websocket Test</title>
+  </head>
+  <body>
+    Client - 1
+    <button onclick="sendMessage()">Send Msg</button>
+  </body>
+  <script>
+    const event = new EventSource("https://localhost:12529/sse");
+    event.onmessage = console.log();
+
+    const url = "https://localhost:12529/trigger-sse";
+
+    // const socket = new WebSocket("wss://localhost:12529");
+
+    // socket.addEventListener("open", function (event) {
+    //   console.log("Connected to WS Server");
+    // });
+
+    // socket.addEventListener("message", function (event) {
+    //   console.log("Message from server", event.data);
+    // });
+
+    const sendMessage = async () => {
+      // socket.send("Hello from Client!");
+      await fetch(url, {
+        headers: {
+          "content-type": "application/json; charset=UTF-8",
+        },
+        method: "POST",
+        body: {
+          message: "Hi!",
+        },
+      });
+    };
+  </script>
+</html>
