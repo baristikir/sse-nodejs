@@ -1,20 +1,25 @@
+/**
+ * * Packages
+ */
 const express = require("express");
-const app = express();
 const cors = require("cors");
 const server = require("https");
 const WebSocket = require("ws");
-const logger = require("./logger");
 const fs = require("fs");
 const path = require("path");
+const logger = require("./logger");
+/**
+ * * Custom Event Emitter + Middleware
+ */
+const events = require("./events");
+const useServerSentEventsMiddleware = require("./middlewares/useServerSentEvents");
 
-// const events = require("./events");
-const EventEmitter = require("events");
-const emitter = new EventEmitter();
-
+const app = express();
+// Defaul Port
 const config = {
   PORT: 12529,
 };
-
+// SSL Self Signed Certificate Setup
 const sslServer = server.createServer(
   {
     key: fs.readFileSync(path.join(__dirname, "../", "cert", "key.pem")),
@@ -22,10 +27,14 @@ const sslServer = server.createServer(
   },
   app
 );
-
+// Specifically for Nginx
 app.enable("trust proxy");
+// Basic Cors
 app.use(cors());
 
+/**
+ * * Static Files
+ */
 app.get("/", function (req, res) {
   res.sendFile(__dirname + "/index.html");
 });
@@ -37,54 +46,34 @@ app.get("/status", (_req, res) => {
   res.status(200).end();
 });
 
-app.get("/sse", (req, res) => {
-  console.log("Event Source Request");
-  res.write("Hi from the server!");
-  emitter.on("notify-update", () => {
-    const headers = {
-      "Content-Type": "text/event-stream",
-      Connection: "keep-alive",
-      "Cache-Control": "no-cache",
-      "Access-Control-Allow-Origin": "*",
-      "X-Accel-Buffering": "no",
-    };
-    res.writeHead(200, headers);
-    res.flushHeaders();
-    try {
-      events.listen(res);
-    } catch (error) {
-      console.error(error);
-      res.status(500).send("Oops");
-    }
+app.get("/sse", useServerSentEventsMiddleware, (req, res) => {
+  logger.info("Event Source Request");
+  // Subscribing to the Update Events
+  events.listen(res);
 
-    req.socket.on(
-      "close",
-      () => {
-        events.clear();
-      },
-      false
-    );
-
-    res.on("close", () => {
-      console.log("Client droped me");
-      res.end();
-    });
+  res.on("close", () => {
+    console.log("Client droped me");
+    res.end();
   });
 });
 
-let i = 0;
-function send(res) {
-  res.write("data: " + `hello${i++}!\n\n`);
-  setTimeout(() => send(res), 1000);
-}
+app.get("/trigger-sse", (req, res) => {
+  console.log("Received Request");
+  // Triggering an Update on the Event Emitter
+  events.trigger();
+  // Very important otherwise the server will crash!
+  res.end();
+});
 
-app.post("/trigger-sse", (req, res) => {
-  console.log("Received: %o", req.body);
-  try {
-    events.trigger();
-  } catch (e) {
-    console.log(e);
-  }
+app.post("/auth/logout", (req, res) => {
+  // Basic unsubscribe
+  events.clear(res);
+  res
+    .status(200)
+    .send({
+      status: "Successfully logged out + Unsubscribed the Event Stream",
+    })
+    .end();
 });
 
 /**

@@ -12,7 +12,9 @@
   </body>
   <script>
     const event = new EventSource("https://localhost:12529/sse");
-    event.onmessage = console.log();
+    event.onmessage = function logEvents(event) {
+      console.log(JSON.parse(event));
+    };
 
     const url = "https://localhost:12529/trigger-sse";
 
@@ -28,14 +30,20 @@
 
     const sendMessage = async () => {
       // socket.send("Hello from Client!");
+      // await fetch(url, {
+      //   headers: {
+      //     "content-type": "application/json; charset=UTF-8",
+      //   },
+      //   method: "POST",
+      //   body: {
+      //     message: "Hi!",
+      //   },
+      // });
       await fetch(url, {
         headers: {
           "content-type": "application/json; charset=UTF-8",
         },
-        method: "POST",
-        body: {
-          message: "Hi!",
-        },
+        method: "GET",
       });
     };
   </script>
