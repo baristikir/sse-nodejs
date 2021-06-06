@@ -13,6 +13,7 @@ const logger = require('./utils/logger');
  */
 const events = require('./events');
 const useServerSentEventsMiddleware = require('./middlewares/useServerSentEvents');
+const { getCases, updateCase } = require('./controllers/cases.controller');
 
 const app = express();
 // Defaul Port
@@ -31,6 +32,7 @@ const sslServer = server.createServer(
 app.enable('trust proxy');
 // Basic Cors
 app.use(cors());
+app.use(express.json());
 
 /**
  * * Static Files
@@ -49,12 +51,11 @@ app.get('/status', (_req, res) => {
 app.get('/sse', useServerSentEventsMiddleware, (req, res) => {
 	logger.info('Event Source Request');
 	// Subscribing to the Update Events
-	events.listen(res);
-
-	res.on('close', () => {
-		console.log('Client droped me');
+	try {
+		events.listen(res);
+	} catch (error) {
 		res.end();
-	});
+	}
 });
 
 app.get('/trigger-sse', (req, res) => {
@@ -65,6 +66,9 @@ app.get('/trigger-sse', (req, res) => {
 	res.end();
 });
 
+app.get('/cases', getCases);
+app.post('/update-case', updateCase);
+
 app.post('/auth/logout', (req, res) => {
 	// Basic unsubscribe
 	events.clear(res);
@@ -74,20 +78,6 @@ app.post('/auth/logout', (req, res) => {
 			status: 'Successfully logged out + Unsubscribed the Event Stream',
 		})
 		.end();
-});
-
-/**
- * * Websocket Stuff
- */
-const wss = new WebSocket.Server({ server: sslServer });
-wss.on('connection', function connection(ws) {
-	console.log('A new client connected!');
-	ws.send("Welcome, you're connected to Plato Node's Websocket Instance!");
-
-	ws.on('message', function (message) {
-		console.log(`received: %s`, message);
-		ws.send('Got it.');
-	});
 });
 
 app.use((err, req, res, next) => {
