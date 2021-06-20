@@ -43,7 +43,7 @@ app.get('/', function (req, res) {
 app.get('/socket.js', function (req, res) {
 	res.sendFile('../' + __dirname + '/socket.js');
 });
-
+// Server Status Check Endpoint
 app.get('/status', (_req, res) => {
 	res.status(200).end();
 });
@@ -66,9 +66,12 @@ app.get('/trigger-sse', (req, res) => {
 	res.end();
 });
 
+// For demo purposes
 app.get('/cases', getCases);
+// For demo purposes -> Displays an event trigger
 app.post('/update-case', updateCase);
 
+// Example Logout Route, don't forget to unsubscribe the SSE endpoint
 app.post('/auth/logout', (req, res) => {
 	// Basic unsubscribe
 	events.clear(res);

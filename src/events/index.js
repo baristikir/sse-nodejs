@@ -5,7 +5,7 @@ const EventEmitter = require('events');
 const emitter = new EventEmitter();
 
 emitter.setMaxListeners(100000);
-// Listening on Event Emits => Emitting Middleware function
+// Listening on Triggers => Emitting Middleware function
 const listen = (res) => {
 	emitter.on('update', () => {
 		const data = {

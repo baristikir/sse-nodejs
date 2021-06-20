@@ -1,4 +1,4 @@
-// require the necessary libraries
+// For demo
 const mongoose = require('mongoose');
 const faker = require('faker');
 const { Db } = require('mongodb');
